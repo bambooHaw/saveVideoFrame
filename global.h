@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/videodev2.h>
+#include <sys/time.h>
 
 #define APP_VERSION         "V0.0.2"
 
@@ -21,9 +22,21 @@
 #define CMOS_INPUT_HEIGHT   1080
 #define IMAGE_SIZE          (CMOS_INPUT_WIDTH * CMOS_INPUT_WIDTH * 2)
 #define BUFFER_COUNT        5           //最多申请5个缓冲区
+/* CMOS_PIX_FMT
+ * V4L2_PIX_FMT_SBGGR10     //backup: 10bit raw格式 for imx291(parallel 10-bit raw) and ov5647(mipi 2lane raw)
+ * V4L2_PIX_FMT_NV16        //backup: just for test  
+ * V4L2_PIX_FMT_YUYV        //backup: just for test
+*/
+#define CMOS_PIX_FMT    V4L2_PIX_FMT_UYVY
+/* CMOS_FIELD
+ * 指明扫描方式，已经去除驱动中相关代码，此处必须指定(默认为 V4L2_FIELD_NONE)
+ * V4L2_FIELD_INTERLACED
+ * V4L2_FIELD_ANY
+*/
+#define CMOS_FIELD  V4L2_FIELD_NONE  
 
 //image save path
-#define IMG_SAVE_PATH "/opt/1080p.frame"
+#define IMG_SAVE_PATH "/opt/1080p.yuv"
 
 #define DEBUG_SWITCH 1
 #if(DEBUG_SWITCH >= 3)
@@ -43,6 +56,7 @@
 #endif
 
 #define COLOR_PRINT_LENGTH  256
+#define USING_ECHO_COLOR_PRINT 0    //0: printf, 1: echo
 #define COLOR_PRINT_BLACK_RED(fmt, args...) do{ \
                                                 char buf[COLOR_PRINT_LENGTH] = {}; \
                                                 sprintf(buf, fmt, ##args); \
@@ -74,6 +88,8 @@ typedef struct _globalInfo{
 	//frame buf for img
 	unsigned char frameBuf[IMAGE_SIZE];
 	int frameSize;
+    //time for saving img at start or end
+	struct timeval tv[2];
 }globalInfo_t;
 
 #ifdef __cplusplus

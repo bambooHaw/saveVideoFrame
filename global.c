@@ -22,8 +22,12 @@ void color_print(unsigned char style, unsigned char background, unsigned char fr
     char cmd[COLOR_PRINT_LENGTH + 64] = {};
     if(NULL != info)
     {
+#if(1 == USING_ECHO_COLOR_PRINT)
         sprintf(cmd, "echo -e \"\033[%d;%d;%dm %s \033[0m\n\"", style, background, front, info);
         system(cmd);
+#else
+        printf("\033[%d;%d;%dm %s \033[0m\n", style, background, front, info);
+#endif
     }
 }
 
@@ -157,6 +161,9 @@ int chooseCam(globalInfo_t* g, int input)
 
     if(0 == ret)
     {
+        /*
+        * 驱动中对应设置了*input对应的vip的vfe的时钟频率， 时钟值来源于sensor_info.c
+        */
         ret = ioctl(g->fdCam, VIDIOC_S_INPUT, &input);
     }else
     {
@@ -172,13 +179,10 @@ int configCam(globalInfo_t* g)
     struct v4l2_format format;
     bzero(&format, sizeof(struct v4l2_format));
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;//帧类型，用于视频捕获设备
-    //V4L2_PIX_FMT_SBGGR10;//10bit raw格式 for imx291(parallel 10-bit raw) and ov5647(mipi 2lane raw)
-    //V4L2_PIX_FMT_NV16 
-    format.fmt.pix.pixelformat = V4L2_PIX_FMT_SBGGR10;
+    format.fmt.pix.pixelformat = CMOS_PIX_FMT;
     format.fmt.pix.width    = CMOS_INPUT_WIDTH;//分辨率
     format.fmt.pix.height   = CMOS_INPUT_HEIGHT;
-    //指明扫描方式，已经去除驱动中相关代码，此处必须指定
-    format.fmt.pix.field    = V4L2_FIELD_NONE;//V4L2_FIELD_INTERLACED;//V4L2_FIELD_ANY;
+    format.fmt.pix.field    = CMOS_FIELD;
 	/*
 	   //videodev2.h
 	   enum v4l2_field {
@@ -199,7 +203,7 @@ int configCam(globalInfo_t* g)
     ret = ioctl(g->fdCam, VIDIOC_S_FMT, &format);
     if (ret != 0)
     {
-    ERR_PRINT("ioctl(VIDIOC_S_FMT) failed %d(%s)", errno, strerror(errno));
+        ERR_PRINT("ioctl(VIDIOC_S_FMT) failed %d(%s)", errno, strerror(errno));
     }else
     {
         //申请缓冲区

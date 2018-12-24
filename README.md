@@ -1,3 +1,6 @@
+###### 20181224
+* succeed saving s5k4ec_mipi yuv422 YUYV data
+* add saving img time counter
 
 ###### 20181220
 * add colorful print function with echo
